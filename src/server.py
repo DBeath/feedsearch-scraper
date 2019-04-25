@@ -1,10 +1,11 @@
-from klein import route, run
+from klein import route, run, Klein
 from scrapy import signals
 from scrapy.crawler import CrawlerRunner
 from feedsearch_spider import FeedSpider
 from lib import get_site_root, coerce_url
 import json
 
+app = Klein()
 
 class FeedCrawlerRunner(CrawlerRunner):
     def crawl(self, crawler_or_spidercls, *args, **kwargs):
@@ -20,6 +21,7 @@ class FeedCrawlerRunner(CrawlerRunner):
         return dfd
 
     def item_scraped(self, item, response, spider):
+        print(item)
         self.items.append(item)
 
     def return_items(self, result):
@@ -29,27 +31,37 @@ class FeedCrawlerRunner(CrawlerRunner):
 def return_spider_output(output):
     return json.dumps([dict(item) for item in output])
 
-@route("/")
+@app.route("/")
 def hello(request):
     print(request.args)
-    return request.args.get(b'name')
+    #return request.args.get(b'name')
     return 'Hello World!'
 
-@route("/search")
-def schedule(request):
+@app.route("/search")
+async def schedule(request):
     print(request)
     print(request.args)
     url = request.args.get(b'url')
+    print(type(url))
+    if not url:
+        return 'No URL'
+    url = url[0].decode('utf-8')
     print(f'Getting URL {url}')
     runner = FeedCrawlerRunner()
-    spider = FeedSpider()
-    spider.allowed_domains = get_site_root(url)
+
     url = coerce_url(url)
     print(f'Coerced URL {url}')
 
-    spider.start_urls = url
-    deferred = runner.crawl(spider)
-    deferred.addCallback(return_spider_output)
-    return deferred
+    spider = FeedSpider(start_url=url)
+    site_root = get_site_root(url)
+    spider.allowed_domains = [site_root]
 
-run("localhost", 8080)
+    print(spider.start_urls)
+    print(spider.allowed_domains)
+
+    response = await runner.crawl(spider, start_urls=[url])
+    print(f'Response: {response}')
+    output = await return_spider_output(response)
+    return output
+
+app.run("localhost", 8080)

@@ -4,16 +4,20 @@ import scrapy
 class FeedSpider(scrapy.Spider):
     name = "links"
     allowed_domains = []
-    start_urls = []
+    #start_urls = ['https://newyorker.com']
     depth_limit = 4
 
-    # def start_requests(self):
-    #     urls = [
-    #         'https://newyorker.com',
-    #     ]
+    def start_requests(self):
+        urls = [
+            'https://newyorker.com',
+        ]
         
-    #     for url in urls:
-    #         yield scrapy.Request(url=url, callback=self.parse)
+        for url in self.start_urls:
+            yield scrapy.Request(url=url, callback=self.parse)
+
+    def __init__(self, *args, **kwargs):
+        super(FeedSpider, self).__init__(*args, **kwargs)
+        self.start_urls = [kwargs.get('start_url')]
 
     def parse(self, response):
         text = response.text
