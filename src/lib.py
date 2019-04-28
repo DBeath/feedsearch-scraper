@@ -1,4 +1,5 @@
 from werkzeug.urls import url_parse, url_fix
+from furl import furl
 
 def coerce_url(url: str, https: bool=True) -> str:
     """
@@ -25,5 +26,10 @@ def get_site_root(url: str) -> str:
     Find the root domain of a url
     """
     url = coerce_url(url)
-    parsed = url_parse(url, scheme="http")
-    return parsed.netloc
+    parsed = furl(url)
+    return parsed.host
+
+
+def query_contains_comments(url: str) -> bool:
+    query = furl(url).query
+    return any(map(url.query.count, ["comment=", "comments=", "post="]))

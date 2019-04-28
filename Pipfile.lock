@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "198e71005b3ac45bea7e16d7739101e7791fe368ee22b3dd931524b82d96a10a"
+            "sha256": "3d298b086a69f406c0a8367e1818cb82b47e1ca4272b7b1bf99df344aa8acc49"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -108,6 +108,14 @@
             ],
             "version": "==1.0.3"
         },
+        "furl": {
+            "hashes": [
+                "sha256:f7e90e9f85ef3f2e64485f04c2a80b50af6133942812fd87a44d45305b079018",
+                "sha256:fdcaedc1fb19a63d7d875b0105b0a5b496dd0989330d454a42bcb401fa5454ec"
+            ],
+            "index": "pypi",
+            "version": "==2.0.0"
+        },
         "hyperlink": {
             "hashes": [
                 "sha256:4288e34705da077fada1111a24a0aa08bb1e76699c9ce49876af722441845654",
@@ -167,6 +175,13 @@
                 "sha256:ff424b01d090ffe1947ec7432b07f536912e0300458f9a7f48ea217dd8362b86"
             ],
             "version": "==4.3.3"
+        },
+        "orderedmultidict": {
+            "hashes": [
+                "sha256:24e3b730cf84e4a6a68be5cc760864905cf66abc89851e724bd5b4e849eaa96b",
+                "sha256:b89895ba6438038d0bdf88020ceff876cf3eae0d5c66a69b526fab31125db2c5"
+            ],
+            "version": "==1.0"
         },
         "parsel": {
             "hashes": [
