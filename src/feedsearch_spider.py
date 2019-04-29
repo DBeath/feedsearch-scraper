@@ -1,5 +1,6 @@
 import scrapy
 from lib import query_contains_comments
+from dupefilters import NoQueryRFPDupeFilter
 
 
 class FeedSpider(scrapy.Spider):
@@ -8,6 +9,10 @@ class FeedSpider(scrapy.Spider):
     #start_urls = ['https://newyorker.com']
     depth_limit = 1
     start_urls = []
+
+    custom_settings = {
+        'DUPEFILTER_CLASS' : 'dupefilters.NoQueryRFPDupeFilter',
+    }
 
     def start_requests(self):
         print(f"Start Requests")
@@ -40,8 +45,9 @@ class FeedSpider(scrapy.Spider):
             }
 
         def is_feedlike_url(url):
-            url = url.split('?')[0]
-            return any(map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"])) and not query_contains_comments(url)
+            # if query_contains_comments(url):
+            #     return False
+            return any(map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"]))
 
         for href in response.css('a::attr(href)').extract():
             if is_feedlike_url(href):
