@@ -55,10 +55,10 @@ class FeedSpider(scrapy.Spider):
         def should_follow_url(url: str) -> bool:
             if '/amp/' in url:
                 return False
+            if query_contains_comments(url):
+                return False
             if is_feedlike_url(url):
                 return True
-            # if query_contains_comments(url):
-            #     return False
             return False
 
         links = []

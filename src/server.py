@@ -1,8 +1,9 @@
-from klein import route, run, Klein
+from klein import route, run, Klein, Plating
 from scrapy import signals
 from scrapy.crawler import CrawlerRunner
 from feedsearch_spider import FeedSpider
-from lib import get_site_root, coerce_url
+from lib import get_site_root, coerce_url, create_start_urls, create_allowed_domains
+from furl import furl
 import json
 
 app = Klein()
@@ -30,13 +31,20 @@ class FeedCrawlerRunner(CrawlerRunner):
 
 
 async def return_spider_output(output):
-    return json.dumps([dict(item) for item in output])
+    return json.dumps([dict(item) for item in output], sort_keys=True, indent=2, separators=(',', ': '))
+
+def get_pretty_print(json_object):
+    return json.dumps(json_object, sort_keys=True, indent=2, separators=(',', ': '))
 
 @app.route("/")
 def hello(request):
     print(request.args)
     #return request.args.get(b'name')
-    return 'Hello World!'
+    #return 'Hello World!'
+    request.responseHeaders.addRawHeader(b"content-type", b"application/json")
+    return request.write(json.dumps({
+        "Testing": "Hello World!"
+    }).encode('utf-8'))
 
 @app.route("/search")
 async def schedule(request):
@@ -54,17 +62,15 @@ async def schedule(request):
     print(f'Coerced URL {url}')
 
     spider = FeedSpider(start_url=url)
-    site_root = get_site_root(url)
-    spider.allowed_domains = [site_root]
-    spider.override_start_urls = [url]
 
-    print(spider.override_start_urls)
-    print(spider.start_urls)
-    print(spider.allowed_domains)
+    #deferred = runner.crawl(spider, start_urls=start_urls, allowed_domains=[site_root])
+    #deferred.addCallback(return_spider_output)
 
-    response = await runner.crawl(spider, start_urls=[url], allowed_domains=[site_root])
-    print(f'Response: {response}')
-    content = await return_spider_output(response)
-    return content
+    content = await runner.crawl(spider, start_urls=create_start_urls(url), allowed_domains=create_allowed_domains(url))
+    response = await return_spider_output(content)
+
+    request.responseHeaders.addRawHeader(b"content-type", b"application/json")
+    # return request.write(deferred)
+    return response
 
 app.run("localhost", 8080)

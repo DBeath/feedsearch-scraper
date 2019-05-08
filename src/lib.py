@@ -1,5 +1,6 @@
 from werkzeug.urls import url_parse, url_fix
 from furl import furl
+from typing import List
 
 def coerce_url(url: str, https: bool=True) -> str:
     """
@@ -30,6 +31,20 @@ def get_site_root(url: str) -> str:
     return parsed.host
 
 
+def create_start_urls(url: str) -> List[str]:
+    origin = furl(url).origin
+    f_origin = furl(origin)
+
+    start_urls = [url, origin]
+    start_urls.append(f_origin.add(path = "/about"))
+    return start_urls
+
+
+def create_allowed_domains(url: str) -> List[str]:
+    parsed = furl(url)
+    return [parsed.host]
+
+
 def query_contains_comments(url: str) -> bool:
-    query = furl(url).query
-    return any(map(url.query.count, ["comment=", "comments=", "post="]))
+    query = str(furl(url).query)
+    return any(map(query.count, ["comment=", "comments=", "post="]))
