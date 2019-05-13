@@ -73,12 +73,3 @@ class FeedSpider(scrapy.Spider):
                 yield response.follow(href, self.parse)
             else:
                 print(f"Not following URL: {href}")
-            # yield response.follow(href, self.parse)
-
-        # for href in response.css('a::attr(href)').extract():
-        #     if is_feedlike_url(href):
-        #         yield response.follow(href, self.parse)
-
-        # for href in response.css('link::attr(href)').extract():
-        #     if is_feedlike_url(href):
-        #         yield response.follow(href, self.parse)

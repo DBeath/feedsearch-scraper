@@ -8,6 +8,7 @@ klein = "*"
 scrapy = "*"
 furl = "*"
 w3lib = "*"
+jinja2 = "*"
 
 [dev-packages]
 

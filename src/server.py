@@ -5,6 +5,14 @@ from feedsearch_spider import FeedSpider
 from lib import get_site_root, coerce_url, create_start_urls, create_allowed_domains
 from furl import furl
 import json
+import os
+
+from jinja2 import Template, Environment, FileSystemLoader
+thisdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+print(thisdir)
+j2_env = Environment(loader=FileSystemLoader(thisdir), trim_blocks=True) # templates dir under src package
+
+# https://stackoverflow.com/questions/36384286/how-to-integrate-flask-scrapy
 
 app = Klein()
 
@@ -36,11 +44,26 @@ async def return_spider_output(output):
 def get_pretty_print(json_object):
     return json.dumps(json_object, sort_keys=True, indent=2, separators=(',', ': '))
 
+def str_to_bool(value):
+    if not value or not isinstance(value, str):
+        return False
+    print(f"Value {value}")
+    return value.lower() in ('true', 't', 'yes', 'y', '1')
+
+def request_arg_str(request, arg_name):
+    value = request.args.get(arg_name.encode('utf-8'))
+    if not value:
+        return None
+    return value[0].decode('utf-8')
+
 @app.route("/")
 def hello(request):
     print(request.args)
     #return request.args.get(b'name')
     #return 'Hello World!'
+    template = j2_env.get_template('index.html')
+    html = template.render(message='Hello World!')
+    return request.write(html.encode('utf-8'))
     request.responseHeaders.addRawHeader(b"content-type", b"application/json")
     return request.write(json.dumps({
         "Testing": "Hello World!"
@@ -50,11 +73,13 @@ def hello(request):
 async def schedule(request):
     print(request)
     print(request.args)
-    url = request.args.get(b'url')
+    url = request_arg_str(request, 'url')
+    render_result = str_to_bool(request_arg_str(request, 'result'))
+    print(f"Render Result: {render_result}")
     print(type(url))
     if not url:
         return 'No URL'
-    url = url[0].decode('utf-8')
+    #url = url[0].decode('utf-8')
     print(f'Getting URL {url}')
     runner = FeedCrawlerRunner()
 
@@ -67,8 +92,14 @@ async def schedule(request):
     #deferred.addCallback(return_spider_output)
 
     content = await runner.crawl(spider, start_urls=create_start_urls(url), allowed_domains=create_allowed_domains(url))
-    response = await return_spider_output(content)
 
+    if render_result:
+        print("Render result as html")
+        template = j2_env.get_template('results.html')
+        html = template.render(feeds=content, url=url)
+        return request.write(html.encode('utf-8'))
+
+    response = await return_spider_output(content)
     request.responseHeaders.addRawHeader(b"content-type", b"application/json")
     # return request.write(deferred)
     return response
