@@ -1,17 +1,19 @@
 import scrapy
 from lib import query_contains_comments
 from dupefilters import NoQueryRFPDupeFilter
+from feed import Feed
+import feedparser
 
 
 class FeedSpider(scrapy.Spider):
     name = "links"
     allowed_domains = []
-    #start_urls = ['https://newyorker.com']
     depth_limit = 2
     start_urls = []
 
     custom_settings = {
-        'DUPEFILTER_CLASS' : 'dupefilters.NoQueryRFPDupeFilter',
+        "DUPEFILTER_CLASS": "dupefilters.NoQueryRFPDupeFilter",
+        "ITEM_PIPELINES": {"pipelines.duplicates_pipeline.DuplicatesPipeline": 300},
     }
 
     def start_requests(self):
@@ -20,7 +22,6 @@ class FeedSpider(scrapy.Spider):
         print(self.settings)
         for url in self.start_urls:
             print(f"URL: {url}")
-            # yield self.make_requests_from_url(url)
             yield scrapy.Request(url=url, callback=self.parse)
 
     # def __init__(self, *args, **kwargs):
@@ -31,29 +32,28 @@ class FeedSpider(scrapy.Spider):
     def parse(self, response):
         print(f"Followed URL: {response.url}")
         text = response.text
-        content_type = response.headers.get('content-type').decode('utf-8')
+        content_type = response.headers.get("content-type").decode("utf-8")
         data = text.lower()
-        # print(content_type)
+
         if not data:
             return
 
         if "json" in content_type and data.count("jsonfeed.org"):
-            yield {
-                'feed_url': response.url
-            }
+            yield Feed(url=response.url, content_type=content_type)
 
         if bool(data.count("<rss") + data.count("<rdf") + data.count("<feed")):
-            yield {
-                'feed_url': response.url
-            }
+            parsed = feedparser.parse(text)
+            feed = parsed.get("feed")
+            title = feed.get("title")
+            yield Feed(url=response.url, content_type=content_type, title=title)
 
         def is_feedlike_url(url):
-            # if query_contains_comments(url):
-            #     return False
-            return any(map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"]))
+            return any(
+                map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"])
+            )
 
         def should_follow_url(url: str) -> bool:
-            if '/amp/' in url:
+            if "/amp/" in url:
                 return False
             if query_contains_comments(url):
                 return False
@@ -62,14 +62,14 @@ class FeedSpider(scrapy.Spider):
             return False
 
         links = []
-        links.extend(response.css('a::attr(href)').getall())
-        links.extend(response.css('link::attr(href)').getall())
+        links.extend(response.css("a::attr(href)").getall())
+        links.extend(response.css("link::attr(href)").getall())
 
-        #print(links)
+        # print(links)
         for href in links:
             # print(href)
             if should_follow_url(href):
-                #print(f"Folling URL: {href}")
+                # print(f"Folling URL: {href}")
                 yield response.follow(href, self.parse)
             else:
                 print(f"Not following URL: {href}")

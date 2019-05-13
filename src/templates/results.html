@@ -6,7 +6,7 @@
     <h2>Feeds for <a href="{{url}}">{{url}}</a></h2>
     <ul id="results-list">
         {% for feed in feeds %}
-            <li><a href="{{feed.feed_url}}">{{feed.feed_url}}</a></li>
+            <li><a href="{{feed.url}}">{{feed.title | safe}}</a></li>
         {% endfor %}
     </ul>
 {% else %}

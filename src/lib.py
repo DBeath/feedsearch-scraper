@@ -2,7 +2,8 @@ from werkzeug.urls import url_parse, url_fix
 from furl import furl
 from typing import List
 
-def coerce_url(url: str, https: bool=True) -> str:
+
+def coerce_url(url: str, https: bool = True) -> str:
     """
     Coerce URL to valid format
 
@@ -36,7 +37,7 @@ def create_start_urls(url: str) -> List[str]:
     f_origin = furl(origin)
 
     start_urls = [url, origin]
-    start_urls.append(f_origin.add(path = "/about"))
+    start_urls.append(f_origin.add(path="/about"))
     return start_urls
 
 
