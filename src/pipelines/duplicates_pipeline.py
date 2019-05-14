@@ -6,8 +6,9 @@ class DuplicatesPipeline(object):
         self.urls_seen = set()
 
     def process_item(self, item, spider):
-        if item["url"] in self.urls_seen:
+        url = item["url"].strip("/")
+        if url in self.urls_seen:
             raise DropItem("Duplicate item found: %s" % item)
         else:
-            self.urls_seen.add(item["url"])
+            self.urls_seen.add(url)
             return item

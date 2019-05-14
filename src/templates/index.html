@@ -1,14 +1,62 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Feedsearch</h1>
+<div>
+  <p>Feedsearch provides a simple API for searching websites for 
+    <a href="https://en.wikipedia.org/wiki/RSS">RSS</a>, 
+    <a href="https://en.wikipedia.org/wiki/Atom_(Web_standard)">Atom</a>, and 
+    <a href="https://jsonfeed.org/">JSON</a> feeds. 
+  It's the library that runs the feed search function at <a href="https://www.auctorial.com">Auctorial</a>.</p>
+</div>
 
 <div id="searchform_div">
-    {% include 'searchform.html' %}
+  {% include 'searchform.html' %}
 </div>
 
 <div id="results_div">
-    {% block results %}
-    {% endblock %}
+  {% block results %}
+  {% endblock %}
 </div>
+
+<div id="documentation_div">
+
+  <h3 class="subheading">API Usage</h3>
+  <p>Make a GET request to <a href="/search?url=arstechnica.com">https://feedsearch.auctorial.com/search</a>
+    with a "url" value in the querystring containing the URL you'd like to search:</p>
+  <pre><code>curl https://feedsearch.auctorial.com/search?url=arstechnica.com</code></pre>
+  <p>If the scheme (e.g. "https://") is not provided in the "url" value then the scheme will default to "http://".</p>
+  <p>The API returns a JSON list of found feeds, with attached metadata about the feed.</p>
+  
+  <pre><code>[
+    {
+      "bozo": 0, 
+      "content_type": "text/xml; charset=UTF-8", 
+      "description": "Serving the Technologist for more than a decade. IT news, reviews, and analysis.", 
+      "favicon": "https://cdn.arstechnica.net/favicon.ico", 
+      "favicon_data_uri": "", 
+      "hubs": [
+        "http://pubsubhubbub.appspot.com/"
+      ],
+      "is_push": true, 
+      "score": 4, 
+      "self_url": "http://feeds.arstechnica.com/arstechnica/index", 
+      "site_name": "Ars Technica", 
+      "site_url": "https://arstechnica.com/", 
+      "title": "Ars Technica", 
+      "url": "http://feeds.arstechnica.com/arstechnica/index/", 
+      "version": "rss20"
+    }
+  ]</code></pre>
+  
+    <p>The API accepts the following query parameters:</p>
+    <ul>
+      <li><b>url</b>: The <a href="https://en.wikipedia.org/wiki/Uniform_Resource_Identifier">URL</a> to search. Will return 400 Bad Request if not set.</li>
+    </ul>
+  
+    <h3 class="subheading">Documentation</h3>
+    <p>Feedsearch is written as an <a href="https://www.python.org/">Python</a> library, 
+    and is available as a Python package on <a href="https://pypi.org/project/feedsearch/">PyPI</a>.</p>
+    <p>Further documentation and source code can be found at the <a href="https://github.com/DBeath/feedsearch">Feedsearch Github repository</a>.</p>
+  
+  </div>
 {% endblock %}

@@ -1,17 +1,24 @@
 import json
 import os
-from klein import route, run, Klein, Plating
+from klein import route, run, Klein
 from scrapy import signals
 from scrapy.crawler import CrawlerRunner
 from feedsearch_spider import FeedSpider
 from lib import get_site_root, coerce_url, create_start_urls, create_allowed_domains
 from jinja2 import Template, Environment, FileSystemLoader, select_autoescape
 from furl import furl
+from twisted.web.static import File
 
 
-thisdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+thisdir = os.path.dirname(os.path.abspath(__file__))
+templatesdir = os.path.join(thisdir, "templates")
+staticdir = os.path.join(thisdir, "static")
 
-j2_env = Environment(loader=FileSystemLoader(thisdir), trim_blocks=True, autoescape=select_autoescape(['html', 'xml']))
+j2_env = Environment(
+    loader=FileSystemLoader(templatesdir),
+    trim_blocks=True,
+    autoescape=select_autoescape(["html", "xml"]),
+)
 
 # https://stackoverflow.com/questions/36384286/how-to-integrate-flask-scrapy
 
@@ -67,6 +74,16 @@ def request_arg_str(request, arg_name):
     return value[0].decode("utf-8")
 
 
+@app.route("/static/", branch=True)
+def static(request):
+    return File(staticdir)
+
+
+@app.route("/redirect")
+def redirect(request):
+    print(app.endpoints)
+    return
+
 @app.route("/")
 def hello(request):
     template = j2_env.get_template("index.html")
@@ -106,12 +123,18 @@ async def schedule(request):
 
     if render_result:
         template = j2_env.get_template("results.html")
-        html = template.render(feeds=content, url=url)
-        request.responseHeaders.addRawHeader(b"content-type", b"text/html; charset=utf-8")
-        return request.write(html.encode('utf-8'))
+        html = template.render(
+            feeds=content, url=url, json=await return_spider_output(content)
+        )
+        request.responseHeaders.addRawHeader(
+            b"content-type", b"text/html; charset=utf-8"
+        )
+        return request.write(html.encode("utf-8"))
 
     response = await return_spider_output(content)
-    request.responseHeaders.addRawHeader(b"content-type", b"application/json; charset=utf-8")
+    request.responseHeaders.addRawHeader(
+        b"content-type", b"application/json; charset=utf-8"
+    )
     # return request.write(deferred)
     return response
 
