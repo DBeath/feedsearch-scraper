@@ -3,6 +3,10 @@
 {% block content %}
 <h1>Feedsearch</h1>
 
+<div id="searchform_div">
+    {% include 'searchform.html' %}
+</div>
+
 <div id="results_div">
     {% block results %}
     {% endblock %}

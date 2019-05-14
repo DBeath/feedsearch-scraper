@@ -5,13 +5,13 @@ from scrapy import signals
 from scrapy.crawler import CrawlerRunner
 from feedsearch_spider import FeedSpider
 from lib import get_site_root, coerce_url, create_start_urls, create_allowed_domains
-from jinja2 import Template, Environment, FileSystemLoader
+from jinja2 import Template, Environment, FileSystemLoader, select_autoescape
 from furl import furl
 
 
 thisdir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
-j2_env = Environment(loader=FileSystemLoader(thisdir), trim_blocks=True)
+j2_env = Environment(loader=FileSystemLoader(thisdir), trim_blocks=True, autoescape=select_autoescape(['html', 'xml']))
 
 # https://stackoverflow.com/questions/36384286/how-to-integrate-flask-scrapy
 
@@ -105,13 +105,13 @@ async def schedule(request):
     )
 
     if render_result:
-        print("Render result as html")
         template = j2_env.get_template("results.html")
         html = template.render(feeds=content, url=url)
-        return request.write(html.encode("utf-8"))
+        request.responseHeaders.addRawHeader(b"content-type", b"text/html; charset=utf-8")
+        return request.write(html.encode('utf-8'))
 
     response = await return_spider_output(content)
-    request.responseHeaders.addRawHeader(b"content-type", b"application/json")
+    request.responseHeaders.addRawHeader(b"content-type", b"application/json; charset=utf-8")
     # return request.write(deferred)
     return response
 

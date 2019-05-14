@@ -1,0 +1,17 @@
+<h3 class="subheading">Search for Feeds</h3>
+<form id="searchform" action="/search" method="GET">
+  <input type="hidden" name="result" value="true">
+  <input
+    id="search-input" 
+    name="url"
+    placeholder="Site or Feed URL, e.g. arstechnica.com"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="off"
+    spellcheck="false"
+    type="text"
+    class="u-full-width"
+    required
+    aria-label="Search for Feeds">
+  <button id="search-button" class="button button-primary" type="submit">Search</button>
+</form>
