@@ -10,6 +10,7 @@ furl = "*"
 w3lib = "*"
 jinja2 = "*"
 feedparser = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 black = "*"

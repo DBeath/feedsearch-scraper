@@ -48,8 +48,14 @@ class FeedCrawlerRunner(CrawlerRunner):
 
 
 async def return_spider_output(output):
+    # return json.dumps(
+    #     [dict(item) for item in output],
+    #     sort_keys=True,
+    #     indent=2,
+    #     separators=(",", ": "),
+    # )
     return json.dumps(
-        [dict(item) for item in output],
+        [item.serialize() for item in output],
         sort_keys=True,
         indent=2,
         separators=(",", ": "),

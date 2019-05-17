@@ -2,7 +2,8 @@ import scrapy
 from lib import query_contains_comments
 from dupefilters import NoQueryRFPDupeFilter
 from feed import Feed
-import feedparser
+import logging
+from scrapy.utils.log import configure_logging
 
 
 class FeedSpider(scrapy.Spider):
@@ -13,9 +14,18 @@ class FeedSpider(scrapy.Spider):
 
     custom_settings = {
         "DUPEFILTER_CLASS": "dupefilters.NoQueryRFPDupeFilter",
-        "ITEM_PIPELINES": {"pipelines.duplicates_pipeline.DuplicatesPipeline": 300},
+        "ITEM_PIPELINES": {
+            "pipelines.duplicates_pipeline.DuplicatesPipeline": 300,
+            "pipelines.feedparser_pipeline.FeedparserPipeline": 400
+        },
         "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
     }
+
+    # configure_logging(install_root_handler=False)
+    # logging.basicConfig(
+    #     format='%(levelname)s: %(message)s',
+    #     level=logging.INFO
+    # )
 
     def start_requests(self):
         print(f"Start Requests")
@@ -33,20 +43,22 @@ class FeedSpider(scrapy.Spider):
     def parse(self, response):
         print(f"Followed URL: {response.url}")
         text = response.text
-        content_type = response.headers.get("content-type").decode("utf-8")
+        headers = response.headers
+        content_type = ""
+        try:
+            content_type = response.headers.get("content-type").decode("utf-8")
+        except:
+            pass
         data = text.lower()
 
         if not data:
             return
 
         if "json" in content_type and data.count("jsonfeed.org"):
-            yield Feed(url=response.url, content_type=content_type)
+            yield Feed(url=response.url, content_type=content_type, data=text, headers=headers)
 
         if bool(data.count("<rss") + data.count("<rdf") + data.count("<feed")):
-            parsed = feedparser.parse(text)
-            feed = parsed.get("feed")
-            title = feed.get("title")
-            yield Feed(url=response.url, content_type=content_type, title=title)
+            yield Feed(url=response.url, content_type=content_type, data=text, headers=headers)
 
         def is_feedlike_url(url):
             return any(
