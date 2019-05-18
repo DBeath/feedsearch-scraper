@@ -1,7 +1,7 @@
 import scrapy
-from lib import query_contains_comments, is_feedlike_url
-from dupefilters import NoQueryRFPDupeFilter
-from feed import Feed
+from feedsearch.lib import query_contains_comments, is_feedlike_url
+from feedsearch.dupefilters import NoQueryRFPDupeFilter
+from feedsearch.feed import Feed
 import logging
 from scrapy.utils.log import configure_logging
 
@@ -15,19 +15,19 @@ class FeedSpider(scrapy.Spider):
     start_urls = []
 
     custom_settings = {
-        "DUPEFILTER_CLASS": "dupefilters.NoQueryRFPDupeFilter",
+        "DUPEFILTER_CLASS": "feedsearch.dupefilters.NoQueryRFPDupeFilter",
         "ITEM_PIPELINES": {
-            "pipelines.duplicates_pipeline.DuplicatesPipeline": 300,
-            "pipelines.feedparser_pipeline.FeedparserPipeline": 400,
+            "feedsearch.pipelines.duplicates_pipeline.DuplicatesPipeline": 300,
+            "feedsearch.pipelines.feedparser_pipeline.FeedparserPipeline": 400,
         },
         "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
     }
 
-    # configure_logging(install_root_handler=False)
-    # logging.basicConfig(
-    #     format='%(levelname)s: %(message)s',
-    #     level=logging.INFO
-    # )
+    configure_logging(install_root_handler=False)
+    logging.basicConfig(
+        format='%(levelname)s: %(message)s',
+        level=logging.DEBUG
+    )
 
     def start_requests(self):
         logger.debug("Start URLS: %s", self.start_urls)

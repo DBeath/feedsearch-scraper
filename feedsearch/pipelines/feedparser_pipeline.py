@@ -4,6 +4,7 @@ import json
 import feedparser
 import logging
 from bs4 import BeautifulSoup
+from feedsearch.lib import parse_header_links
 
 bs4_parser = "lxml"
 logger = logging.getLogger("feedsearch")
@@ -28,7 +29,11 @@ class FeedparserPipeline(object):
         except json.JSONDecodeError:
             pass
 
-        self.parse_xml(item)
+        try:
+            self.parse_xml(item)
+        except Exception as e:
+            logger.exception("Failed to parse feed %s", item["url"])
+        print(item)
         return item
 
     def parse_xml(self, item) -> None:
@@ -169,7 +174,8 @@ class FeedparserPipeline(object):
         link_header = headers.get("Link")
         links: list = []
         if link_header:
-            links = parse_header_links(link_header)
+            print(link_header)
+            links = parse_header_links(link_header.decode('utf-8'))
         return FeedparserPipeline.find_hubs_and_self_links(links)
 
     @staticmethod

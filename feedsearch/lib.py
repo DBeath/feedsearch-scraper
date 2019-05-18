@@ -37,7 +37,7 @@ def create_start_urls(url: str) -> List[str]:
     f_origin = furl(origin)
 
     start_urls = [url, origin]
-    start_urls.append(f_origin.add(path="/about"))
+    start_urls.append(str(f_origin.add(path="/about")))
     return start_urls
 
 
@@ -53,3 +53,40 @@ def query_contains_comments(url: str) -> bool:
 
 def is_feedlike_url(url):
     return any(map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"]))
+
+
+def parse_header_links(value):
+    """
+    Return a list of Dicts of parsed link headers proxies.
+    i.e. Link: <http:/.../front.jpeg>; rel=front; type="image/jpeg",
+    <http://.../back.jpeg>; rel=back;type="image/jpeg"
+
+    :param value: HTTP Link header to parse
+    :return: List of Dicts
+    """
+
+    links = []
+
+    replace_chars = " '\""
+
+    for val in value.split(","):
+        try:
+            url, params = val.split(";", 1)
+        except ValueError:
+            url, params = val, ""
+
+        link = {}
+
+        link["url"] = url.strip("<> '\"")
+
+        for param in params.split(";"):
+            try:
+                key, value = param.split("=")
+            except ValueError:
+                break
+
+            link[key.strip(replace_chars)] = value.strip(replace_chars)
+
+        links.append(link)
+
+    return links

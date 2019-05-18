@@ -3,8 +3,8 @@ import os
 from klein import route, run, Klein
 from scrapy import signals
 from scrapy.crawler import CrawlerRunner
-from feedsearch_spider import FeedSpider
-from lib import get_site_root, coerce_url, create_start_urls, create_allowed_domains
+from feedsearch.feedsearch_spider import FeedSpider
+from feedsearch.lib import get_site_root, coerce_url, create_start_urls, create_allowed_domains
 from jinja2 import Template, Environment, FileSystemLoader, select_autoescape
 from furl import furl
 from twisted.web.static import File
@@ -20,6 +20,7 @@ j2_env = Environment(
     loader=FileSystemLoader(templatesdir),
     trim_blocks=True,
     autoescape=select_autoescape(["html", "xml"]),
+    enable_async=True
 )
 
 # https://stackoverflow.com/questions/36384286/how-to-integrate-flask-scrapy
@@ -48,22 +49,25 @@ class FeedCrawlerRunner(CrawlerRunner):
         return self.items
 
 
-async def return_spider_output(output):
-    # return json.dumps(
-    #     [dict(item) for item in output],
-    #     sort_keys=True,
-    #     indent=2,
-    #     separators=(",", ": "),
-    # )
-    return json.dumps(
-        [item.serialize() for item in output],
-        sort_keys=True,
-        indent=2,
-        separators=(",", ": "),
+def return_spider_output(output):
+    return [item.serialize() for item in output]
+
+
+async def jsonify(request, value: object):
+    request.responseHeaders.addRawHeader(
+        b"content-type", b"application/json; charset=utf-8"
     )
+    return get_pretty_print(value)
 
 
-def get_pretty_print(json_object):
+async def render_template(request, template: str, **kwargs):
+    template = j2_env.get_template(template)
+    html = await template.render_async(**kwargs)
+    request.responseHeaders.addRawHeader(b"content-type", b"text/html; charset=utf-8")
+    return request.write(html.encode("utf-8"))
+
+
+def get_pretty_print(json_object: object):
     return json.dumps(json_object, sort_keys=True, indent=2, separators=(",", ": "))
 
 
@@ -91,11 +95,13 @@ def redirect(request):
     print(app.endpoints)
     return
 
+
 @app.route("/")
-def hello(request):
-    template = j2_env.get_template("index.html")
-    html = template.render(message="Hello World!")
-    return request.write(html.encode("utf-8"))
+async def index(request):
+    return await render_template(request, "index.html", message="Hello World!")
+    # template = j2_env.get_template("index.html")
+    # html = template.render(message="Hello World!")
+    # return request.write(html.encode("utf-8"))
     # request.responseHeaders.addRawHeader(b"content-type", b"application/json")
     # return request.write(json.dumps({
     #     "Testing": "Hello World!"
@@ -103,12 +109,12 @@ def hello(request):
 
 
 @app.route("/search")
-async def schedule(request):
+async def search(request):
     url = request_arg_str(request, "url")
     render_result = str_to_bool(request_arg_str(request, "result"))
 
     if not url:
-        return "No URL"
+        return await jsonify(request, {"error": "No URL"})
 
     print(f"Getting URL: {url}")
     print(f"Render Result: {render_result}")
@@ -117,7 +123,7 @@ async def schedule(request):
     print(f"Coerced URL: {url}")
 
     runner = FeedCrawlerRunner()
-    spider = FeedSpider(start_url=url)
+    spider = FeedSpider()
 
     # deferred = runner.crawl(spider, start_urls=start_urls, allowed_domains=[site_root])
     # deferred.addCallback(return_spider_output)
@@ -129,34 +135,21 @@ async def schedule(request):
     )
 
     if render_result:
-        template = j2_env.get_template("results.html")
-        html = template.render(
-            feeds=content, url=url, json=await return_spider_output(content)
+        return await render_template(
+            request,
+            "results.html",
+            feeds=content,
+            url=url,
+            json=get_pretty_print(return_spider_output(content)),
         )
-        request.responseHeaders.addRawHeader(
-            b"content-type", b"text/html; charset=utf-8"
-        )
-        return request.write(html.encode("utf-8"))
+        # template = j2_env.get_template("results.html")
+        # html = template.render(
+        #     feeds=content, url=url, json=return_spider_output(content)
+        # )
+        # request.responseHeaders.addRawHeader(
+        #     b"content-type", b"text/html; charset=utf-8"
+        # )
+        # return request.write(html.encode("utf-8"))
 
-    response = await return_spider_output(content)
-    request.responseHeaders.addRawHeader(
-        b"content-type", b"application/json; charset=utf-8"
-    )
-    # return request.write(deferred)
-    return response
-
-
-if __name__ == "__main__":
-    configure_logging(install_root_handler=False)
-
-    logger = logging.getLogger("feedsearch")
-    logger.setLevel(logging.DEBUG)
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]"
-    )
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-    app.run("localhost", 8080)
+    response = return_spider_output(content)
+    return await jsonify(request, response)
