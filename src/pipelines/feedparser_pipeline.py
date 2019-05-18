@@ -3,14 +3,15 @@ from typing import Tuple, Any, List
 import json
 import feedparser
 import logging
+from bs4 import BeautifulSoup
 
 bs4_parser = "lxml"
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("feedsearch")
 
 
 class FeedparserPipeline(object):
     def process_item(self, item, spider):
-        print(f"Parsing feed {item['url']}")
+        logger.info("Parsing feed %s", item["url"])
 
         # Check link headers first for WebSub content discovery
         # https://www.w3.org/TR/websub/#discovery

@@ -1,9 +1,11 @@
 import scrapy
-from lib import query_contains_comments
+from lib import query_contains_comments, is_feedlike_url
 from dupefilters import NoQueryRFPDupeFilter
 from feed import Feed
 import logging
 from scrapy.utils.log import configure_logging
+
+logger = logging.getLogger("feedsearch")
 
 
 class FeedSpider(scrapy.Spider):
@@ -16,7 +18,7 @@ class FeedSpider(scrapy.Spider):
         "DUPEFILTER_CLASS": "dupefilters.NoQueryRFPDupeFilter",
         "ITEM_PIPELINES": {
             "pipelines.duplicates_pipeline.DuplicatesPipeline": 300,
-            "pipelines.feedparser_pipeline.FeedparserPipeline": 400
+            "pipelines.feedparser_pipeline.FeedparserPipeline": 400,
         },
         "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
     }
@@ -28,20 +30,12 @@ class FeedSpider(scrapy.Spider):
     # )
 
     def start_requests(self):
-        print(f"Start Requests")
-        print(vars(self))
-        print(self.settings)
+        logger.debug("Start URLS: %s", self.start_urls)
         for url in self.start_urls:
-            print(f"URL: {url}")
             yield scrapy.Request(url=url, callback=self.parse)
 
-    # def __init__(self, *args, **kwargs):
-    #     super(FeedSpider, self).__init__(*args, **kwargs)
-    #     print(f"Kwargs: {kwargs}")
-    #     self.start_urls = kwargs.get('start_urls')
-
     def parse(self, response):
-        print(f"Followed URL: {response.url}")
+        logger.debug("Followed URL: %s", response.url)
         text = response.text
         headers = response.headers
         content_type = ""
@@ -55,34 +49,30 @@ class FeedSpider(scrapy.Spider):
             return
 
         if "json" in content_type and data.count("jsonfeed.org"):
-            yield Feed(url=response.url, content_type=content_type, data=text, headers=headers)
-
-        if bool(data.count("<rss") + data.count("<rdf") + data.count("<feed")):
-            yield Feed(url=response.url, content_type=content_type, data=text, headers=headers)
-
-        def is_feedlike_url(url):
-            return any(
-                map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"])
+            yield Feed(
+                url=response.url, content_type=content_type, data=text, headers=headers
             )
 
-        def should_follow_url(url: str) -> bool:
-            if "/amp/" in url:
-                return False
-            if query_contains_comments(url):
-                return False
-            if is_feedlike_url(url):
-                return True
-            return False
+        if bool(data.count("<rss") + data.count("<rdf") + data.count("<feed")):
+            yield Feed(
+                url=response.url, content_type=content_type, data=text, headers=headers
+            )
 
         links = []
         links.extend(response.css("a::attr(href)").getall())
         links.extend(response.css("link::attr(href)").getall())
 
-        # print(links)
         for href in links:
-            # print(href)
-            if should_follow_url(href):
-                # print(f"Folling URL: {href}")
+            if self.should_follow_url(href):
                 yield response.follow(href, self.parse)
             else:
-                print(f"Not following URL: {href}")
+                logger.debug("Not following URL: %s", href)
+
+    def should_follow_url(self, url: str) -> bool:
+        if "/amp/" in url:
+            return False
+        if query_contains_comments(url):
+            return False
+        if is_feedlike_url(url):
+            return True
+        return False

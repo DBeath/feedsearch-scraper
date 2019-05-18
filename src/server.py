@@ -8,6 +8,8 @@ from lib import get_site_root, coerce_url, create_start_urls, create_allowed_dom
 from jinja2 import Template, Environment, FileSystemLoader, select_autoescape
 from furl import furl
 from twisted.web.static import File
+import logging
+from scrapy.utils.log import configure_logging
 
 
 thisdir = os.path.dirname(os.path.abspath(__file__))
@@ -40,7 +42,6 @@ class FeedCrawlerRunner(CrawlerRunner):
         return dfd
 
     def item_scraped(self, item, response, spider):
-        print(item)
         self.items.append(item)
 
     def return_items(self, result):
@@ -145,4 +146,17 @@ async def schedule(request):
     return response
 
 
-app.run("localhost", 8080)
+if __name__ == "__main__":
+    configure_logging(install_root_handler=False)
+
+    logger = logging.getLogger("feedsearch")
+    logger.setLevel(logging.DEBUG)
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s [in %(pathname)s:%(lineno)d]"
+    )
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+
+    app.run("localhost", 8080)

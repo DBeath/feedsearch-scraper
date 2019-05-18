@@ -3,7 +3,7 @@ from furl import furl
 from typing import List
 
 
-def coerce_url(url: str, https: bool = True) -> str:
+def coerce_url(url: str, https: bool = False) -> str:
     """
     Coerce URL to valid format
 
@@ -49,3 +49,7 @@ def create_allowed_domains(url: str) -> List[str]:
 def query_contains_comments(url: str) -> bool:
     query = str(furl(url).query)
     return any(map(query.count, ["comment=", "comments=", "post="]))
+
+
+def is_feedlike_url(url):
+    return any(map(url.lower().count, ["rss", "rdf", "xml", "atom", "feed", "json"]))
