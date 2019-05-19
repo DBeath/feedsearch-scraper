@@ -33,7 +33,6 @@ class FeedparserPipeline(object):
             self.parse_xml(item)
         except Exception as e:
             logger.exception("Failed to parse feed %s", item["url"])
-        print(item)
         return item
 
     def parse_xml(self, item) -> None:

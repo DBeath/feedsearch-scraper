@@ -131,7 +131,7 @@ async def search(request):
     content = await runner.crawl(
         spider,
         start_urls=create_start_urls(url),
-        allowed_domains=create_allowed_domains(url),
+        # allowed_domains=create_allowed_domains(url),
     )
 
     if render_result:

@@ -23,19 +23,19 @@ class FeedSpider(scrapy.Spider):
         "USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36",
     }
 
-    configure_logging(install_root_handler=False)
-    logging.basicConfig(
-        format='%(levelname)s: %(message)s',
-        level=logging.DEBUG
-    )
+    # configure_logging(install_root_handler=False)
+    # logging.basicConfig(
+    #     format='%(levelname)s: %(message)s',
+    #     level=logging.INFO
+    # )
 
     def start_requests(self):
-        logger.debug("Start URLS: %s", self.start_urls)
+        logger.info("Start URLS: %s", self.start_urls)
         for url in self.start_urls:
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
-        logger.debug("Followed URL: %s", response.url)
+        logger.info("Followed URL: %s", response.url)
         text = response.text
         headers = response.headers
         content_type = ""
